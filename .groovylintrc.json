@@ -1,0 +1,10 @@
+{
+    "extends": "recommended-jenkinsfile",
+    "rules": {
+        "comments.ClassJavadoc": "off",
+        "formatting.Indentation": {
+            "spacesPerIndentLevel": 2,
+            "severity": "info"
+        }
+    }
+}

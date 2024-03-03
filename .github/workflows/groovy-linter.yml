@@ -1,0 +1,109 @@
+name: GroovyLinter
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  npm-groovy-lint:
+    runs-on: ubuntu-latest
+    container:
+      image: nvuillam/npm-groovy-lint
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Run npm-groovy-lint
+        id: lint_result
+        continue-on-error: true
+        shell: bash
+        run: |
+          # Runnung linter and save result as json
+          # we ingore the exit code of the linter and save it as variable
+          # as we want to show the violated rules when the linter fails
+          result_file="result-$(echo ${GITHUB_SHA} | cut -c1-8).json"
+          lint_status=0
+          npm-groovy-lint --output ${result_file} "pipelines/**/*" "pipelines/*" || lint_status=1
+
+          {
+            echo 'LINT_RESULT<<EOF'
+            sed -e '$a\' ${result_file}
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+          echo "RESULT_FILE=${result_file}" >> $GITHUB_OUTPUT
+          echo "LINT_STATUS=$lint_status" >> $GITHUB_ENV
+
+      - name: Populate lintian status
+        shell: bash
+        run: |
+          # Exit with linter exit code
+          exit ${{ env.LINT_STATUS }}
+
+      - name: Archive result.json
+        if: success() || failure()
+        id: result-upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: GroovyLinter
+          path: |
+            ${{ steps.lint_result.outputs.RESULT_FILE }}
+
+      - name: Show violated rules
+        if: failure()
+        run: |
+          # Show violated rules
+          echo "The following rules are violated:"
+          echo "${{ toJSON(fromJSON( steps.lint_result.outputs.LINT_RESULT).summary.detectedRules) }}"
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && !cancelled()
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          script: |
+            const workflow_name = '${{ github.workflow   }}';
+            const workflow_url = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            const artifact_url = '${{ steps.result-upload.outputs.artifact-url }}';
+
+            const pr_number = '${{ github.event.pull_request.number }}';
+            const job_status = '${{ job.status }}';
+            const success = job_status === 'success';
+
+            const lint_result = JSON.parse(`${{ steps.lint_result.outputs.LINT_RESULT }}`);
+
+            let body = `### ${success ? '✅' : '❌'} ${workflow_name}: ${success ? 'succeeded' : 'failed'}\n`;
+            body += '\n';
+            body += `➡️ [Open workflow job](${workflow_url})\n`;
+            body += `➡️ [Download job result](${artifact_url})\n`;
+            body += '\n';
+            if (!success ) {
+              body += '### ❗️ Violated Rules:\n';
+              const violated_rules = lint_result.summary.detectedRules;
+              for (let rule in violated_rules) {
+                body += `- **${rule}** violated **${violated_rules[rule]}** time(s)\n`;
+              }
+            }
+
+            await github.rest.issues.createComment({
+              issue_number: pr_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            })
