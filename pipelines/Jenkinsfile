@@ -1,0 +1,72 @@
+pipeline {
+    agent { 
+        node { 
+            label 'ENV-Jenkins-KIWI-Build'
+        }
+    }
+
+    stages {
+        stage('Set Build Number') {
+            steps {
+                script {
+                    currentBuild.displayName = "${version}"
+                }
+            }
+        }
+        stage("Rebuild VMWare Sandbox image") {
+            steps{
+                build(
+                    job: 'KIWI-Sandbox_IMG_GENERATION_pipeline', 
+                    parameters: [
+                        string(name: 'version', value: "${version}"), 
+                        string(name: 'change', value: "${change}"),
+                        string(name: 'branch', value: "${branch}"),
+                        string(name: 'unstable', value: "${unstable}"),
+                        string(name: 'profile', value: "VMWare")
+                    ]
+                )
+            }
+        }
+        stage("Rebuild QEMU Sandbox image") {
+            steps{
+                build(
+                    job: 'KIWI-Sandbox_IMG_GENERATION_pipeline', 
+                    parameters: [
+                        string(name: 'version', value: "${version}"), 
+                        string(name: 'change', value: "${change}"),
+                        string(name: 'branch', value: "${branch}"),
+                        string(name: 'unstable', value: "${unstable}"),
+                        string(name: 'profile', value: "QEMU")
+                    ]
+                )
+            }
+        }
+        stage("Rebuild AWS Sandbox image") {
+            steps{
+                build(
+                    job: 'KIWI-Sandbox_IMG_GENERATION_pipeline', 
+                    parameters: [
+                        string(name: 'version', value: "${version}"), 
+                        string(name: 'change', value: "${change}"),
+                        string(name: 'branch', value: "${branch}"),
+                        string(name: 'unstable', value: "${unstable}"),
+                        string(name: 'profile', value: "AWS")
+                    ]
+                )
+            }
+        }
+        stage("Rebuild Devel images") {
+            steps{
+                build(
+                    job: 'KIWI-Devel_IMG_GENERATION_pipeline', 
+                    parameters: [
+                        string(name: 'version', value: "${version}"), 
+                        string(name: 'change', value: "${change}"),
+                        string(name: 'branch', value: "${branch}"),
+                        string(name: 'unstable', value: "${unstable}")
+                    ]
+                )
+            }
+        }
+    }    
+}
