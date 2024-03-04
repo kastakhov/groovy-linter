@@ -93,7 +93,7 @@ jobs:
 
             const success = job_status === 'success';
 
-            const lint_result = JSON.parse(`${{ toJSON(steps.lint_result.outputs.LINT_RESULT) }}`);
+            const lint_result = JSON.parse(`${{ steps.lint_result.outputs.LINT_RESULT }}`);
 
             let body = `### ${success ? '✅' : '❌'} ${workflow_name}: ${success ? 'succeeded' : 'failed'}\n`;
             body += '\n';
