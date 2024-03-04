@@ -44,7 +44,7 @@ jobs:
           lint_result_file="result-$(echo ${GITHUB_SHA} | cut -c1-8).json"
           lint_exit_code=0
 
-          npm-groovy-lint --output ./${lint_result_file} "pipelines/**/*" "pipelines/*" || lint_exit_code=1
+          npm-groovy-lint --ignorepattern "**/.placeholder" --output ./${lint_result_file} "pipelines/**/*" "pipelines/*" || lint_exit_code=1
 
           # Result doesn't have newline at the end, so add with sed
           {
