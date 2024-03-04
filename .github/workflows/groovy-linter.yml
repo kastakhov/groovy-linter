@@ -93,10 +93,10 @@ jobs:
 
             const success = job_status === 'success';
 
-            let lint_result = `${{ toJSON(steps.lint_result.outputs.LINT_RESULT) }}`;
-            # Remove newlines from the result
+            let lint_result = '${{ toJSON(steps.lint_result.outputs.LINT_RESULT) }}';
+            // Remove newlines from the result
             lint_result = lint_result.replace(/(?:\r\n|\r|\n)/g, '');
-            # Remove first quote and last quote symbols
+            // Remove first quote and last quote symbols
             lint_result = lint_result.replace(/(^"|"$)/g, '');
             lint_result = JSON.parse(lint_result);
 
