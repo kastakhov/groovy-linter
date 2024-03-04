@@ -93,7 +93,7 @@ jobs:
 
             const success = job_status === 'success';
 
-            let lint_result = '${{ steps.lint_result.outputs.LINT_RESULT }}';
+            let lint_result = `${{ toJSON(steps.lint_result.outputs.LINT_RESULT) }}`;
             lint_result = lint_result.replace(/(?:\r\n|\r|\n)/g, '');
             console.log(lint_result);
             lint_result = JSON.parse(lint_result);
