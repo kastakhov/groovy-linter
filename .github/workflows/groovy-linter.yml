@@ -96,9 +96,6 @@ jobs:
             let lint_result = `${{ toJSON(steps.lint_result.outputs.LINT_RESULT) }}`;
             // Remove newline symbols from the json
             lint_result = lint_result.replace(/(?:\r\n|\r|\n)/g, '');
-            // Remove first quote and last quote symbols
-            lint_result = lint_result.replace(/^"/, '');
-            lint_result = lint_result.replace(/"$/, '');
             lint_result = JSON.parse(lint_result);
 
             let body = `### ${success ? '✅' : '❌'} ${workflow_name}: ${success ? 'succeeded' : 'failed'}\n`;
