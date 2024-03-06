@@ -5,9 +5,11 @@ on:
   push:
     branches:
       - main
+      - 'dev/**'
   pull_request:
     branches:
       - main
+      - 'dev/**'
 
 permissions:
   issues: write
@@ -91,7 +93,7 @@ jobs:
 
             const success = job_status === 'success';
 
-            let lint_result = `${{ toJSON(steps.lint_result.outputs.LINT_RESULT) }}`;
+            let lint_result = `${{ toJSON(fromJSON(steps.lint_result.outputs.LINT_RESULT).summary) }}`;
             // Remove newline symbols from the json
             lint_result = lint_result.replace(/(?:\r\n|\r|\n)/g, '');
             // Remove first quote and last quote symbols
@@ -106,7 +108,7 @@ jobs:
             body += '\n';
             if (!success ) {
               body += '### ❗️ Violated Rules:\n';
-              const violated_rules = lint_result.summary.detectedRules;
+              const violated_rules = lint_result.detectedRules;
               for (let rule in violated_rules) {
                 body += `- **${rule}** violated **${violated_rules[rule]}** time(s)\n`;
               }
